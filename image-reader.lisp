@@ -47,8 +47,7 @@
 
    #:image->clx-image_depth
    #:load-ppm-into-clx-image_depth
-   #:initialize-host-default-display
-))
+   #:initialize-host-default-display))
 
 (in-package :PPM)
 
@@ -80,11 +79,11 @@
 (deftype clx-array ()
   #-sbcl '(simple-array (or bit card-4 card-8 card-16 card-24 card-32) (* *))
   #+sbcl '(or (simple-array bit (* *))
-	      (simple-array card-4 (* *))
-	      (simple-array card-8 (* *))
-	      (simple-array card-16 (* *))
-	      (simple-array card-24 (* *))
-	      (simple-array card-32 (* *))))
+        (simple-array card-4 (* *))
+        (simple-array card-8 (* *))
+        (simple-array card-16 (* *))
+        (simple-array card-24 (* *))
+        (simple-array card-32 (* *))))
 
 (defvar *gray-table* (make-array 256 :element-type 'fixnum))
 (defvar *red-table* (make-array 256 :element-type 'fixnum))
@@ -96,19 +95,19 @@
 (defun initialize-color-tables (colormap r-table g-table b-table)
   (declare (type color-table r-table g-table b-table))
   (loop for i of-type card-16 from 0 to 255
-	for r = (xlib:make-color :red (/ i 255) :green 0 :blue 0)
-	for g = (xlib:make-color :red 0 :green (/ i 255) :blue 0)
-	for b = (xlib:make-color :red 0 :green 0 :blue (/ i 255))
-	do (setf (aref r-table i) (xlib:alloc-color colormap r)
-		 (aref g-table i) (xlib:alloc-color colormap g)
-		 (aref b-table i) (xlib:alloc-color colormap b))))
+  for r = (xlib:make-color :red (/ i 255) :green 0 :blue 0)
+  for g = (xlib:make-color :red 0 :green (/ i 255) :blue 0)
+  for b = (xlib:make-color :red 0 :green 0 :blue (/ i 255))
+  do (setf (aref r-table i) (xlib:alloc-color colormap r)
+     (aref g-table i) (xlib:alloc-color colormap g)
+     (aref b-table i) (xlib:alloc-color colormap b))))
 
 (defun initialize-gray-table (colormap gray-table)
   (declare (type color-table gray-table))
-  (loop	with m of-type card-8 = 255
-	for i of-type card-16 from 0 to m
-	for rgb = (xlib:make-color :red (/ i m) :green (/ i m) :blue (/ i m))
-	do (setf (aref gray-table i) (xlib:alloc-color colormap rgb))))
+  (loop   with m of-type card-8 = 255
+  for i of-type card-16 from 0 to m
+  for rgb = (xlib:make-color :red (/ i m) :green (/ i m) :blue (/ i m))
+  do (setf (aref gray-table i) (xlib:alloc-color colormap rgb))))
 
 ;; Public color utilities.
 
@@ -124,8 +123,8 @@
 (defun get-color (r-index g-index b-index)
   (declare (type card-8 r-index g-index b-index))
   (logior (the fixnum (aref *red-table* r-index))
-	  (the fixnum (aref *green-table* g-index))
-	  (the fixnum (aref *blue-table* b-index))))
+    (the fixnum (aref *green-table* g-index))
+    (the fixnum (aref *blue-table* b-index))))
 
 ;;;; Images
 ;; Protocol class
@@ -199,11 +198,11 @@
   (declare (type card-8 mlevel))
   (loop with size of-type card-32 = (* width height)
         with pixels = (make-array (list height width) :element-type 'card-8)
-	with vec = (make-array size :element-type 'card-8 :displaced-to pixels)
-	with offset of-type card-32 = 0
-	while (< offset size)
-	do (setf offset (read-sequence vec stream :start offset))
-	finally (return (make-p5-image pixels mlevel))))
+  with vec = (make-array size :element-type 'card-8 :displaced-to pixels)
+  with offset of-type card-32 = 0
+  while (< offset size)
+  do (setf offset (read-sequence vec stream :start offset))
+  finally (return (make-p5-image pixels mlevel))))
 
 (defclass p6 (colored-24-image) ())
 
@@ -214,23 +213,23 @@
   (declare (type card-16 width height))
   (declare (type card-8 mlevel))
   (loop with size of-type card-32 = (* width height)
-	with cache-size of-type card-32 = (the card-32 (min size 21000))
-	with aux = (make-array (* 3 cache-size) :element-type 'card-8)
-	for start of-type card-32 from 0 by cache-size below size
-	for end of-type fixnum = (min (+ start cache-size) size)
-	with data = (make-array (list height width) :element-type 'card-24)
-	with vec = (make-array size :element-type 'card-24 :displaced-to data)
-	do (loop with offset of-type card-32 = 0
-		 while (< offset (* 3 (the card-32 (- end start))))
-		 do (setf offset (read-sequence aux stream :start offset)))
-	   (loop for i of-type card-32 from start below end
-		 for j of-type card-32 from 0 by 3
-		 do (setf (aref vec i)
-			  (the card-24
-			    (+ (ash (the card-8 (aref aux j)) 16)
-			       (ash (the card-8 (aref aux (1+ j))) 8)
-			       (the card-8 (aref aux (+ 2 j)))))))
-	finally (return (make-p6-image data mlevel))))
+  with cache-size of-type card-32 = (the card-32 (min size 21000))
+  with aux = (make-array (* 3 cache-size) :element-type 'card-8)
+  for start of-type card-32 from 0 by cache-size below size
+  for end of-type fixnum = (min (+ start cache-size) size)
+  with data = (make-array (list height width) :element-type 'card-24)
+  with vec = (make-array size :element-type 'card-24 :displaced-to data)
+  do (loop with offset of-type card-32 = 0
+     while (< offset (* 3 (the card-32 (- end start))))
+     do (setf offset (read-sequence aux stream :start offset)))
+     (loop for i of-type card-32 from start below end
+     for j of-type card-32 from 0 by 3
+     do (setf (aref vec i)
+        (the card-24
+          (+ (ash (the card-8 (aref aux j)) 16)
+             (ash (the card-8 (aref aux (1+ j))) 8)
+             (the card-8 (aref aux (+ 2 j)))))))
+  finally (return (make-p6-image data mlevel))))
 
 ;;;; Macros.
 
@@ -244,16 +243,16 @@
     `(progn
        (set-syntax-from-char #\# #\; *ppm-readtable*)
        (flet ((parse (stream)
-		(let ((*readtable* *ppm-readtable*))
-		  (read stream))))
-	 (let ((,pnm-type (intern (format nil "~a" (parse ,stream)) :keyword))
-	       (,(or width var1) (parse ,stream))
-	       (,(or height var2) (parse ,stream))
-	       (,(or max-level var3) (parse ,stream)))
-	   ,@(unless width `((declare (ignore ,var1))))
-	   ,@(unless height `((declare (ignore ,var2))))
-	   ,@(unless max-level `((declare (ignore ,var3))))
-	   ,@body)))))
+    (let ((*readtable* *ppm-readtable*))
+      (read stream))))
+   (let ((,pnm-type (intern (format nil "~a" (parse ,stream)) :keyword))
+         (,(or width var1) (parse ,stream))
+         (,(or height var2) (parse ,stream))
+         (,(or max-level var3) (parse ,stream)))
+     ,@(unless width `((declare (ignore ,var1))))
+     ,@(unless height `((declare (ignore ,var2))))
+     ,@(unless max-level `((declare (ignore ,var3))))
+     ,@body)))))
 
 ;;;; Load functions.
 
@@ -264,9 +263,9 @@
       (declare (type card-16 width height))
       (declare (type card-8 max))
       (with-open-file (byte-stream filename :element-type 'card-8)
-	(unless (file-position byte-stream (file-position stream))
-	  (error "could not reposition image data stream"))
-	(make-image-from-stream type byte-stream width height max)))))
+  (unless (file-position byte-stream (file-position stream))
+    (error "could not reposition image data stream"))
+  (make-image-from-stream type byte-stream width height max)))))
 
 (defun image->clx-image (image drawable)
   (image->clx-image_depth image (xlib:drawable-depth drawable)))
@@ -274,24 +273,24 @@
 (defun image->clx-image_depth (image depth)
   "Returns a clx image representation of an image."
   (loop with getter = (typecase image
-			(gray-scale-image #'gray->x-gray)
-			(colored-24-image #'color->x-color)
-			(t (error "unknow image type ~a" (type-of image))))
-;;	with depth of-type card-8 = (xlib:drawable-depth drawable)
-	with bits-per-pixel = (find-bits-per-pixel depth)
-	with w = (image-width image) 
-	with h = (image-height image)
-	with type = `(unsigned-byte ,bits-per-pixel)
-;;	with res #-sbcl of-type #-sbcl clx-array = (make-array (list h w) :element-type type)
-	with res of-type clx-array = (make-array (list h w) :element-type type)
-	for y of-type card-16 from 0 below h
-	do (loop for x of-type card-16 from 0 below w 
-		 for pixel = (image-pixel image x y)
-		 do (setf (aref res y x)
-			  (funcall (the function getter) pixel)))
-	finally (return (xlib:create-image
-			    :width w :height h :depth depth :data res
-			    :bits-per-pixel bits-per-pixel))))
+      (gray-scale-image #'gray->x-gray)
+      (colored-24-image #'color->x-color)
+      (t (error "unknow image type ~a" (type-of image))))
+;;  with depth of-type card-8 = (xlib:drawable-depth drawable)
+  with bits-per-pixel = (find-bits-per-pixel depth)
+  with w = (image-width image)
+  with h = (image-height image)
+  with type = `(unsigned-byte ,bits-per-pixel)
+;;  with res #-sbcl of-type #-sbcl clx-array = (make-array (list h w) :element-type type)
+  with res of-type clx-array = (make-array (list h w) :element-type type)
+  for y of-type card-16 from 0 below h
+  do (loop for x of-type card-16 from 0 below w
+     for pixel = (image-pixel image x y)
+     do (setf (aref res y x)
+        (funcall (the function getter) pixel)))
+  finally (return (xlib:create-image
+          :width w :height h :depth depth :data res
+          :bits-per-pixel bits-per-pixel))))
 
 (defun load-ppm-into-clx-image (filename drawable)
   "Returns a clx image representation of a pnm image readed in a pnm file."
@@ -311,8 +310,8 @@
 (defun initialize-host-default-display (&optional (host ""))
   "initializes the *colormap* and returns the depth of the host's default display"
   (let*  ((display (xlib:open-display host))
-	  (screen (xlib:display-default-screen display))
-	  (colormap (xlib:screen-default-colormap screen)))
+    (screen (xlib:display-default-screen display))
+    (colormap (xlib:screen-default-colormap screen)))
     (initialize colormap)
     (xlib:screen-root-depth screen)))
 
@@ -321,8 +320,8 @@
 (defun find-bits-per-pixel (depth)
   (declare (type card-8 depth))
   (cond ((>= depth 24) 32)
-	((> depth 16) 24)
-	((> depth 8) 16)
-	((> depth 4) 8)
-	((> depth 1) 4)
-	(t depth 1)))
+  ((> depth 16) 24)
+  ((> depth 8) 16)
+  ((> depth 4) 8)
+  ((> depth 1) 4)
+  (t depth 1)))
