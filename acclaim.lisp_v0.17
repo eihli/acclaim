@@ -1,0 +1,451 @@
+;;; --------------------------------------------------------------------
+;;;     Title: A Simple Presentation Program
+;;;    Author: Daniel Barlow, Max-Gerd Retzlaff
+;;;   Version: 0.17
+;;;    Date of this version: May, 19th 2004, 13:10:23 CEST
+;;;
+;;;   First version by Daniel Barlow <dan@telent.net>
+;;;   (see http://www.linux.org.uk/~dan/linux2003/viewer.lisp)
+;;;   Changes by Max-Gerd Retzlaff <m.retzlaff@gmx.net>
+;;;
+;;;   You need CLX and a modified version of image-reader.lisp of the 
+;;;   Eclipse window manager that you should have gotten with this file.
+;;;
+;;;   A set of slides, you can use for testing, is avaliable at:
+;;;   http://www.linux.org.uk/~dan/linux2003/ukuug-slides.lisp
+;;;
+;;;   History:
+;;;   0.10 - 0.11: page numeration
+;;;   0.11 - 0.12: li*, br, *draw-background-image* 
+;;;   0.12 - 0.13: inline image support (with all test code)
+;;;   0.13 - 0.14: inline image support (test code removed)
+;;;   0.14 - 0.15: cosmetic changes of the source coded
+;;;   0.15 - 0.16: renamed from exhibitionist to acclaim
+;;;   0.16 - 0.17: new function load-bg-image
+;;; --------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; package definition
+(defpackage #:acclaim
+  (:use #:cl)
+;;  (:require #:xlib #:ppm) ;; only pseudo code.. :(
+  (:export #:start #:go-on))
+
+(in-package :acclaim)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; class definitions
+(defclass element ()
+  ((content :initarg :content :accessor element-content)
+   (parent :initarg :parent :accessor element-parent)))
+
+(defclass horizontal-element (element) ())
+(defclass i (horizontal-element) ())
+(defclass tt (horizontal-element) ())
+(defclass b (horizontal-element) ())
+(defclass center (horizontal-element) ())
+
+(defclass vertical-element (element) ())
+(defclass slide (vertical-element) ())
+(defclass title (vertical-element) ())
+(defclass ul (vertical-element) ())
+(defclass pre (vertical-element) ())
+(defclass smallpre (vertical-element) ())
+(defclass line (vertical-element) ())
+(defclass p (vertical-element) ())
+(defclass li (vertical-element) ())
+(defclass li* (vertical-element) ())
+(defclass br (vertical-element) ())
+(defclass image (vertical-element) ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; slide setting variables
+;;
+;; These variables should be set by a function like init-acclaim-slides..
+
+(defvar *slides-pathname*
+  #p"coding:viewer;slides;lisp-ist-toll.slides")
+;;  #p"coding:viewer;slides;ukuug-slides.lisp")
+
+(defvar *default-fontname* "-*-helvetica-medium-r-*-*-*-240-*-*-*-*-*-*")
+
+(defvar *images-dir* #p"/home/mgr/daten/coding/lisp/viewer/backgrounds/")
+(defvar *bg-image-filename*
+  "Decker1024_1152x768_dark.pnm"
+;  "Yummy_Pi.pnm"
+;  "Grey_Waters_Ahead.pnm"
+;  "Minimal_Bliss.pnm"
+;  "Blue_Haze.pnm"
+;  "sandstone_bk-blank-1152.ppm"
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; far to many variables..
+;; Normally you do not have to change them.
+
+(defvar *default-display-depth* ;; has to be before (defvar *bg-clx-image* ..)
+  (ppm:initialize-host-default-display))
+
+(defvar *bg-clx-image*)
+(defun load-bg-image (filename &optional (images-dir *images-dir*))
+  "loads a pnm file (given by filename) into *bg-clx-image*,
+filename is relative to images-dir (default *images-dir*)"
+  (setf *bg-clx-image* (ppm:load-ppm-into-clx-image_depth
+			(merge-pathnames filename images-dir)
+			*default-display-depth*)))
+
+(eval-when (:execute :compile-toplevel :load-toplevel)
+  (load-bg-image *bg-image-filename*))
+(defvar *bg-image-pixmap*)
+(defvar *bg-image-gcontext*)
+
+(defvar *last-foil* 0)
+(defvar *offset* (complex 0 0))
+(defvar *main-x-border* 50)
+
+(DEFVAR *DISPLAY*)
+(DEFVAR *SCREEN*)
+(DEFVAR *SCREEN-width*)
+(DEFVAR *SCREEN-height*)
+(DEFVAR *COLORMAP*)
+(DEFVAR *YELLOW*)
+(DEFVAR *WIN*)
+(DEFVAR *FONT*)
+(DEFVAR *FOREGROUND*)
+(DEFVAR *BACKGROUND*)
+(DEFVAR *foreground-pixel*)
+(DEFVAR *background-pixel*)
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; debug variables
+(defvar *draw-background-image* t)
+(defvar *debug-boxes* nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; the code
+(defun get-font (f) (xlib:open-font *display* f))
+
+(defmacro make-render-element=around (element font &key fg-pixel shift-value)
+  `(defmethod render-element :around ((element ,element))
+     (let ((*font* (get-font ,font)))
+       (xlib:with-gcontext
+	,(if fg-pixel
+	    `(*foreground* :font *font*
+			  :foreground ,fg-pixel)
+	   `(*foreground* :font *font*))
+	,(if shift-value
+	     `(+ (call-next-method) ,shift-value)
+	   `(call-next-method))))))
+
+(make-render-element=around title
+;  "-*-helvetica-medium-r-*-*-*-480-*-*-*-*-*-*"
+   "-misc-nasalization-medium-r-normal-*-*-480-*-*-p-*-iso8859-1"
+;  "-misc-still time-medium-r-normal-*-*-480-*-*-p-*-iso8859-1"
+   :fg-pixel *background-pixel*
+   :shift-value #c(0 50))
+(make-render-element=around pre
+   "-*-courier-medium-r-*-*-*-240-*-*-*-*-*-*"			    
+   :fg-pixel *background-pixel*)
+(make-render-element=around smallpre
+   "-*-courier-medium-r-*-*-*-180-*-*-*-*-*-*"
+   :fg-pixel *background-pixel*)
+(make-render-element=around tt
+   "-*-courier-medium-r-*-*-*-240-*-*-*-*-*-*")
+(make-render-element=around b
+   "-*-helvetica-bold-r-*-*-*-240-*-*-*-*-*-*")
+(make-render-element=around i
+   "-*-helvetica-medium-o-*-*-*-240-*-*-*-*-*-*")
+
+(defmethod render-element :around ((element t))
+;;  (declare (optimize (debug 3)))
+  (let ((before *offset*)
+	(size (call-next-method)))
+    (when (and *debug-boxes* before size)
+      (xlib:draw-rectangle *win* *foreground*
+			   (floor (realpart before))
+			   (floor (imagpart before))
+			   (floor (realpart size))
+			   (floor (imagpart size))))
+    size))
+
+(defmethod render-element ((e center))
+  (multiple-value-bind (w a d l r ascent descent) 
+      (xlib:text-extents *font* (car (element-content e)))
+    (declare (ignore a d l r ascent descent))
+    (let* ((new-offset (- (/ (- (xlib:drawable-width *win*) w) 2)
+			  (realpart *offset*)))
+	   (*offset* (+ *offset* new-offset)))
+      (+ new-offset (call-next-method)))))
+    
+(defmethod render-element ((e string))
+  (let (i start
+	(width 0)
+	(height 0))
+    (loop
+     (setf start (if i (1+ i) 0)
+	   i (position #\Newline e :start (if i (1+ i) 0)))
+     (multiple-value-bind (w a d l r ascent descent) 
+	 (xlib:text-extents *font* e :start (or start 0)
+			    :end (or i (length e)))
+       (declare (ignore a d l r))
+       (xlib:draw-glyphs *win* *foreground*
+			 (floor (realpart *offset*))
+			 (floor (+ height ascent (imagpart *offset*)))
+			 e
+			 :start (or start 0)
+			 :end (or i (length e)))
+       (setf width (max width w)
+	     height (+ ascent descent height))
+       (unless i (return))))
+    (complex width height)))
+
+(defmethod render-element ((e element))
+  (let ((size 0)
+	(*offset* *offset*)
+	(kids (element-content e)))
+;;    (pprint kids *trace-output*)
+    (loop
+     (let ((kid (car kids)))
+       (setf kids (cdr kids))
+       (unless kid (return size))
+       (let ((kid-size (render-element kid)))
+	 (if (typep kid 'vertical-element)
+	     (setf size (complex (max (realpart size) (realpart kid-size))
+				 (+ (imagpart kid-size) (imagpart size)))
+		   *offset* (+ *offset* (complex 0 (imagpart kid-size))))
+	     (setf size (complex (+ (realpart size) (realpart kid-size))
+				 (max (imagpart kid-size) (imagpart size)))
+		   *offset* (+ *offset* (realpart kid-size)))))))))
+
+(defmethod render-element ((e br))
+  (let ((*offset* (+ *offset* #c(20 15))))
+    (+ #c(20 30))))
+
+(defmethod render-element ((e ul))
+  (let ((*offset* (+ *offset* #c(20 15))))
+    (+ #c(20 30) (call-next-method))))
+
+(defmethod render-element ((e li))
+  (let ((*offset* (+ *offset* 30)))
+    (let ((size (call-next-method)))
+      (xlib:draw-rectangle *win* *foreground*
+			   (floor (- (realpart *offset*) 20))
+			   (floor (+ (imagpart *offset*) 10))
+			   10 10 :fill-p)
+      (+ (complex (realpart size) (+ 20 (imagpart size))) 30))))
+
+(defmethod render-element ((e li*))
+  (let ((*offset* (+ *offset* 30)))
+    (let ((size (call-next-method)))
+      (+ (complex (realpart size) (+ 20 (imagpart size))) 30))))
+
+(defmethod render-element ((e p))
+  (multiple-value-bind (w a d l r asc desc)
+      (xlib:text-extents *font* "J")
+    (declare (ignore w a d l r))
+    (let ((n (call-next-method)))
+      (complex (realpart n) (+ asc desc (imagpart n))))))
+
+(defmethod render-element ((e image))
+  "syntax: (image filename &key x y width height align (ignore-text nil))
+Normally :x and :y, respectively, should _not_ be used.
+:align can be \"left\", \"center\", or \"right\", being \"left\" the default.
+:ignore-text means that *offset* will be returned unchanged."
+  (destructuring-bind
+      (filename &key x y width height align (ignore-text nil))
+      (element-content e)
+    
+  (let* ((pathname (merge-pathnames filename *slides-pathname*))
+	 (pnm-image (ppm:load-ppm pathname))
+	 (clx-image (ppm:image->clx-image pnm-image (xlib:screen-root *screen*)))
+	 (image-gcontext (xlib:create-gcontext :drawable *win*))
+	 (width (or width (ppm:image-width pnm-image)))
+	 (height (or height (ppm:image-height pnm-image)))
+	 (x-pos (cond
+		 ((equal align "center")
+		  (/ (- (xlib:drawable-width *win*) width) 2))
+		 ((equal align "right")
+		  (- (xlib:drawable-width *win*)
+		     *main-x-border*
+		     width))
+		 (t (realpart *offset*)))))
+
+    (xlib:put-image *win* image-gcontext clx-image
+		    :x (or x x-pos)
+		    :y (or y (imagpart *offset*))
+		    :width width :height height)
+
+    (if ignore-text
+	#c(0 0)
+	(+ (complex 0 (+ 20 height)))))))
+
+(defun render-slide (slide &optional page-no)
+  (xlib:draw-rectangle *win* *bg-image-gcontext* 0 0
+		       (xlib:drawable-width *win*)
+		       (xlib:drawable-height *win*)
+		       :fill-p)
+;;  (xlib:put-image *win* *bg-image-gcontext* *bg-image-pixmap* :x 0 :y 0)
+  (let ((*offset* (complex *main-x-border* 20)))
+    (render-element slide))
+  (when page-no
+    (render-page-number page-no))
+  (xlib:display-force-output *display*))
+
+(defun render-page-number (number)
+  (let* ((string (princ-to-string number))
+	 (*offset* (complex (- *screen-width* 85)
+			   (- *screen-height* 60))))
+    (render-element string)))
+
+(defun make-element (parent class &rest content)
+;;  (format *trace-output* "~%~%--> ~a <--~%" class)
+;;  (pprint content *trace-output*)
+  (let ((r (make-instance class :parent parent)))
+    (setf (element-content r)
+	  (if (eql class 'image)
+	      content
+	    (loop for c in content
+		  if (stringp c) collect c
+;;  		  else if (integerp c) collect c
+		  else collect (apply #'make-element r c))))
+    r))
+
+(defmacro special-let* (variables &rest body)
+  `(let* ,variables
+     (declare (special ,@(mapcar (lambda (var)
+				   (if (symbolp var)
+				       var
+				     (car var)))
+				 variables)))
+     ,@body))
+
+(defun go-on (&optional foil)
+  "start the slide show at foil *last-foil*, or given by the optional parameter :foil"
+  (start :foil (or foil *last-foil*)))
+
+(defun start (&key (foil 0)
+		 width height
+		 (host ""))
+  "start the slide show"
+      (special-let*
+       ((*display* (xlib:open-display host))
+	(*screen* (xlib:display-default-screen *display*))
+	(*colormap* (ppm:initialize ;; <- ugly side effect!
+		     (xlib:screen-default-colormap *screen*)))
+	(*yellow* 
+	 (xlib:alloc-color *colormap* (xlib:lookup-color *colormap* "yellow")))
+	(*screen-width* (or width (xlib:screen-width *screen*)))
+	(*screen-height* (or height (xlib:screen-height *screen*)))
+	(*win*
+	 (xlib:create-window
+	  :parent (xlib:screen-root *screen*)
+	  :x 0
+	  :y 0
+	  :width *screen-width*
+	  :height *screen-height*
+	  :event-mask '(:exposure :button-press :key-release)
+;;	  :background *bg-image-pixmap*
+;;  	  :background (xlib:alloc-color
+;;  		       *colormap*
+;;  		       (xlib:lookup-color *colormap*
+;;  					  "midnightblue"))))
+	  ))
+	(*font* (get-font *default-fontname*))
+	(*foreground-pixel* (xlib:screen-black-pixel *screen*)); default-foreground-pixel
+	(*background-pixel* (xlib:screen-white-pixel *screen*)); default-background-pixel
+	(*foreground*
+	 (xlib:create-gcontext
+	  :cache-p nil
+	  :drawable *win*
+	  :fill-style :solid
+	  :background *background-pixel*
+	  :foreground *yellow*
+	  :font *font*))
+	(*background*
+	 (xlib:create-gcontext 
+	  :drawable *win*
+	  :fill-style :solid
+	  :background *background-pixel*
+	  :foreground (xlib:alloc-color *colormap*
+			  (xlib:lookup-color *colormap* "midnightblue"))
+	  :font "fixed"))
+	(*bg-image-pixmap*
+	 (when *draw-background-image*
+	   (xlib:image-pixmap
+	    (xlib:screen-root *screen*)
+	    *bg-clx-image*)))
+	(*bg-image-gcontext*
+	  (xlib:create-gcontext 
+	   :drawable *win*
+	   :tile *bg-image-pixmap*
+	   :fill-style :tiled)))
+       (unwind-protect
+	   (progn
+	     (xlib:set-wm-properties *win*
+				     :name 'Exhibition
+				     :icon-name "Exhibition"
+				     :resource-name "Exhibition"
+				     :resource-class 'Exhibition
+;; 				     :command (list* 'hello-world host args)
+;; 				     :x x :y y :width width :height height
+;; 				     :min-width width :min-height height
+;; 				     :input :off :initial-state :normal
+				     )
+	     (run-core foil))
+	 ;; close screen
+	 (xlib:close-display *display*))))
+
+(defun run-core (&optional (number 0))
+  (xlib:map-window *win*)
+  (let (slides)
+    (labels ((reload ()
+	       (setf slides
+		     (with-open-file
+			 (slides *slides-pathname* :direction :input)
+		      (let ((*package*  #.*package*))
+		       (loop for form = (read slides nil nil)
+			     while form
+			     collect (apply #'make-element nil form))))))
+	     (repaint ()
+	       (if (< number (length slides))
+		   (progn (render-slide (elt slides number)
+					(when (not (zerop number))
+					  number))
+			  nil)
+		   t)))
+      (reload)
+;;       (if (>= number (length slides))
+;; 	  (setf number (1- (length slides)))
+;; 	(if (< number 0)
+;; 	    (setf number 0)))
+;;      (repaint) superfluous
+      (xlib:event-case
+       (*display* :discard-p t :force-output-p t)
+       (exposure 
+	(window count)
+	(when (zerop count) ;; Ignore all but the last exposure event
+	  (xlib:with-state (window)
+	    (render-slide (elt slides number)
+			  (when (not (zerop number))
+			    number))))
+	nil)
+       (button-press
+	()
+	(when (< number (1- (length slides)))
+	  (incf number))
+	(repaint))
+       (key-release
+	(code state)
+	(multiple-value-prog1 
+	 (case (xlib:keycode->character *display* code state)
+	   (#\Space (when (< number (1- (length slides)))
+		      (incf number))
+	            (repaint))
+	   (#\Backspace (when (> number 0)
+			  (decf number))
+	                (repaint))
+	   (#\r (reload) (repaint))
+	   (#\q t)
+	   (t nil))
+	 (setf *last-foil* number))))))
+  *last-foil*)
