@@ -170,15 +170,15 @@
 ;;; package definition
 (defpackage #:my-pcl
   (:use #+sbcl #:SB-PCL
-    #+openmcl #:CCL
-    #+cmu #:PCL
-    #+sbcl #:sb-ext)
+        #+openmcl #:CCL
+        #+cmu #:PCL
+        #+sbcl #:sb-ext)
   (:export #:class-direct-superclasses
-       #:run-program))
+           #:run-program))
 
 (defpackage #:acclaim
   (:use #:cl #:my-pcl)
-;;(:require #:xlib #:ppm) ;; only pseudo code.. use asdf
+  ;;(:require #:xlib #:ppm) ;; only pseudo code.. use asdf
   (:export #:run #:load-slides #:change-host #:change-slideset))
 
 (in-package :acclaim)
@@ -206,7 +206,7 @@ nil: load images when they are actually put on the screen (using render-element)
   "The hostname of the computer on whose default display the slides should be displayed.
 Please use (change-host \"name\") to change this variable.")
 (defvar *default-display-depth* ;; has to be before (defvar *bg-clx-image* ..)
-                                ;; and after (defvar *host* ..)
+  ;; and after (defvar *host* ..)
   (ppm:initialize-host-default-display *host*))
 
 (defvar *slideset-number* 0
@@ -360,24 +360,24 @@ Please use (change-slideset 0) to change it.")
 
 (defun element-property (element property-name &key no-recursion)
   (let* ((class (class-of element))
-     (element-name (class-name class))
-     (slideset (element-slideset element))
-     (element-config
-      (when slideset
-        (cdr (assoc element-name (slideset-configuration slideset)))))
-     (property (or (slot-value element property-name)
-               (getf element-config (create-keyword property-name))
-               (element-property-default element property-name))))
+         (element-name (class-name class))
+         (slideset (element-slideset element))
+         (element-config
+           (when slideset
+             (cdr (assoc element-name (slideset-configuration slideset)))))
+         (property (or (slot-value element property-name)
+                       (getf element-config (create-keyword property-name))
+                       (element-property-default element property-name))))
     ;; Recursion: Check the superclasses up to the class element.
     (if property
-    property
-      (if (or (eql element-name 'element)
-          no-recursion)
-      nil ;; Yes, this is the right thing!
-    ;; Note that only the first of direct-superclasses is used!
-    ;; Right now I can't think of an important case to use multiple
-    ;; inheritence to define an element, so this is enough for now.
-    (element-property (make-instance (car (class-direct-superclasses class))) property-name)))))
+        property
+        (if (or (eql element-name 'element)
+                no-recursion)
+            nil ;; Yes, this is the right thing!
+            ;; Note that only the first of direct-superclasses is used!
+            ;; Right now I can't think of an important case to use multiple
+            ;; inheritence to define an element, so this is enough for now.
+            (element-property (make-instance (car (class-direct-superclasses class))) property-name)))))
      
 (defgeneric element-fontname (element))
 (defmethod element-fontname ((element element))
@@ -411,7 +411,7 @@ Please use (change-slideset 0) to change it.")
   (format *trace-output* "Note: If the new host's default display has a different color depth you have to reload the slides.~%")
   (setf *host* hostname)
   (setf *default-display-depth*
-    (ppm:initialize-host-default-display *host*)))
+        (ppm:initialize-host-default-display *host*)))
 
 (defun change-slideset (slideset-number)
   (unless *debug-do-not-reset-*last-foil**
@@ -429,7 +429,7 @@ Please use (change-slideset 0) to change it.")
 
 (defun colorname-to-color (colorname)
   (xlib:alloc-color *colormap*
-            (xlib:lookup-color *colormap* colorname)))
+                    (xlib:lookup-color *colormap* colorname)))
 
 (defun get-slides (&optional (slideset-number *slideset-number*))
   (element-content (nth slideset-number *slidesets*)))
@@ -441,21 +441,21 @@ Please use (change-slideset 0) to change it.")
 
 (defmethod render-element :around ((element element))
   (let* ((fontname (element-fontname element))
-     (color (element-color element))
-     (shift-value (or (element-shift-value element)
-              #c(0 0)))
-     (*font* (if fontname
-             (get-font fontname)
-           *font*))
-     (*fg-color* (if color
-            (colorname-to-color color)
-              *fg-color*)))
+         (color (element-color element))
+         (shift-value (or (element-shift-value element)
+                          #c(0 0)))
+         (*font* (if fontname
+                     (get-font fontname)
+                     *font*))
+         (*fg-color* (if color
+                         (colorname-to-color color)
+                         *fg-color*)))
     (if (or fontname color)
-    (xlib:with-gcontext (*fg-color-gcontext*
-                 :font *font*
-                 :foreground *fg-color*)
-                (+ shift-value (call-next-method)))
-    (+ shift-value (call-next-method)))))
+        (xlib:with-gcontext (*fg-color-gcontext*
+                             :font *font*
+                             :foreground *fg-color*)
+          (+ shift-value (call-next-method)))
+        (+ shift-value (call-next-method)))))
 
 (defmethod render-element :around ((element no-wrap))
   (let ((*wrap-lines* nil))
@@ -467,8 +467,8 @@ Please use (change-slideset 0) to change it.")
 
 (defmethod render-element :around ((element page-number))
   (let ((*wrap-lines* nil)
-    (*offset* (complex (- *screen-width* 85)
-               (- *screen-height* 60))))
+        (*offset* (complex (- *screen-width* 85)
+                           (- *screen-height* 60))))
     (call-next-method)))
 
 (defmethod render-element :around ((element br))
@@ -476,16 +476,16 @@ Please use (change-slideset 0) to change it.")
   (call-next-method))
 
 (defmethod render-element :around ((element t))
-;;  (declare (optimize (debug 3)))
-;;    (format *trace-output* "font: ~a, element-class: ~a~%" *font* (class-of element))
+  ;;  (declare (optimize (debug 3)))
+  ;;    (format *trace-output* "font: ~a, element-class: ~a~%" *font* (class-of element))
   (let ((before *offset*)
-    (size (call-next-method)))
+        (size (call-next-method)))
     (when (and *debug-boxes* before size)
       (xlib:draw-rectangle *win* *fg-color-gcontext*
-               (floor (realpart before))
-               (floor (imagpart before))
-               (floor (realpart size))
-               (floor (imagpart size))))
+                           (floor (realpart before))
+                           (floor (imagpart before))
+                           (floor (realpart size))
+                           (floor (imagpart size))))
     size))
 
 (defmethod render-element ((e center))
@@ -493,131 +493,131 @@ Please use (change-slideset 0) to change it.")
       (xlib:text-extents *font* (car (element-content e)))
     (declare (ignore a d l r ascent descent))
     (let* ((new-offset (- (/ (- (xlib:drawable-width *win*) w) 2)
-              (realpart *offset*)))
-       (*offset* (+ *offset* new-offset)))
+                          (realpart *offset*)))
+           (*offset* (+ *offset* new-offset)))
       (+ new-offset (call-next-method)))))
     
 (defmethod render-element ((e string))
   (let (i
-    start
-    line
-    (width 0)
-    (height 0)
-    (line-begin (floor (realpart *offset*)))
-    (no-whitespace-magic 0)
-    wrap-occured)
+        start
+        line
+        (width 0)
+        (height 0)
+        (line-begin (floor (realpart *offset*)))
+        (no-whitespace-magic 0)
+        wrap-occured)
     (when *wrap-lines*
       ;; hm, should this also slurp the whitespace following the newline?
       (setf e (substitute #\Space #\Newline e)))
     (loop
-;;      (format *trace-output* "a: start: ~a, i: ~a~%" start i)
-;;      (force-output)
-     (tagbody loop-start
-     (setf start (if i (1+ i) 0)
-       i (unless *wrap-lines*
-           (position #\Newline e :start (if i (1+ i) 0)))
-       line (subseq e (or start 0) (or i (length e))))
-;;      (format *trace-output* "b: start: ~a, i: ~a~%" start i)
-;;      (force-output)
-     (tagbody make-fit ;; Yes, the performance of this algorithm is _impressive_!
-       (multiple-value-bind (line-width a d l r ascent descent) 
-       (xlib:text-extents *font* e
-                  :start (or start 0)
-                  :end  (or i (length e)))
-     (declare (ignore a d l r))
-     (when (and (> line-width (- *screen-width*
-                     line-begin
-                     *main-x-border*))
-            *wrap-lines*)
-;;         (format *trace-output* "too long: ~a~%" line)
-;;         (force-output)
-       (setf wrap-occured t)
-       (setf i (position-if (lambda (char)
-                  (position char '(#\Space #\Newline #\Tab)))
-                e :start (or start 0)
-                  :end (or i (length e))
-                  :from-end t)
-         ;; to do: Do some magic if i is nil.
-         line (subseq e (or start 0) (or i (length e))))
-;;         (format *trace-output* "new: ~a~%" line)
-;;         (force-output)
-       (if i ;; <- This is the formidable magic if the line is
-             ;;    too long and it doesn't contain any whitespace.
-           (go make-fit)
-         (progn
-           (setf e (concatenate 'string " " e))
-           (setf no-whitespace-magic
-             (or *last-string-skip* (+ ascent descent)))
-           (go loop-start))))
-       (xlib:draw-glyphs *win* *fg-color-gcontext*
-             line-begin
-             (floor (+ height ascent (imagpart *offset*)))
-             line)
-       (setf width line-width ;(max width line-width)
-         height (+ ascent descent height)
-         *last-string-skip* (+ ascent descent)
-         line-begin *line-begin*)
-       (unless i (return))))))
+      ;;      (format *trace-output* "a: start: ~a, i: ~a~%" start i)
+      ;;      (force-output)
+      (tagbody loop-start
+         (setf start (if i (1+ i) 0)
+               i (unless *wrap-lines*
+                   (position #\Newline e :start (if i (1+ i) 0)))
+               line (subseq e (or start 0) (or i (length e))))
+         ;;      (format *trace-output* "b: start: ~a, i: ~a~%" start i)
+         ;;      (force-output)
+         (tagbody make-fit ;; Yes, the performance of this algorithm is _impressive_!
+            (multiple-value-bind (line-width a d l r ascent descent)
+                (xlib:text-extents *font* e
+                                   :start (or start 0)
+                                   :end  (or i (length e)))
+              (declare (ignore a d l r))
+              (when (and (> line-width (- *screen-width*
+                                          line-begin
+                                          *main-x-border*))
+                         *wrap-lines*)
+                ;;         (format *trace-output* "too long: ~a~%" line)
+                ;;         (force-output)
+                (setf wrap-occured t)
+                (setf i (position-if (lambda (char)
+                                       (position char '(#\Space #\Newline #\Tab)))
+                                     e :start (or start 0)
+                                     :end (or i (length e))
+                                     :from-end t)
+                      ;; to do: Do some magic if i is nil.
+                      line (subseq e (or start 0) (or i (length e))))
+                ;;         (format *trace-output* "new: ~a~%" line)
+                ;;         (force-output)
+                (if i ;; <- This is the formidable magic if the line is
+                    ;;    too long and it doesn't contain any whitespace.
+                    (go make-fit)
+                    (progn
+                      (setf e (concatenate 'string " " e))
+                      (setf no-whitespace-magic
+                            (or *last-string-skip* (+ ascent descent)))
+                      (go loop-start))))
+              (xlib:draw-glyphs *win* *fg-color-gcontext*
+                                line-begin
+                                (floor (+ height ascent (imagpart *offset*)))
+                                line)
+              (setf width line-width    ;(max width line-width)
+                    height (+ ascent descent height)
+                    *last-string-skip* (+ ascent descent)
+                    line-begin *line-begin*)
+              (unless i (return))))))
     (complex (if wrap-occured
-         ;; subtract original difference of *offset* to *line-begin*
-         (- width (- (realpart *offset*) *line-begin*))
-           width)
-         (+ height no-whitespace-magic))))
+                 ;; subtract original difference of *offset* to *line-begin*
+                 (- width (- (realpart *offset*) *line-begin*))
+                 width)
+             (+ height no-whitespace-magic))))
 
 (defmethod render-element ((e element))
   (let ((size 0)
-    (*offset* *offset*)
-    (kids (element-content e))
-    outer-wrap-correction)
-;;    (pprint kids *trace-output*)
+        (*offset* *offset*)
+        (kids (element-content e))
+        outer-wrap-correction)
+    ;;    (pprint kids *trace-output*)
     (loop
-     (let ((kid (car kids)))
-       (setf kids (cdr kids))
-       (unless kid (return (+ size (if outer-wrap-correction
-                       outer-wrap-correction
-                     0))))
-       (let ((kid-size (render-element kid)))
-     (when (typep kid 'vertical-element)
-         (setf size (complex (max (realpart size) (realpart kid-size))
-                 (+ (imagpart kid-size) (imagpart size)))
-           *offset* (+ *offset* (complex 0 (imagpart kid-size)))))
-     (when (typep kid 'horizontal-element)
-         (setf size (complex (+ (realpart size) (realpart kid-size))
-                 (max (imagpart kid-size) (imagpart size)))
-           *offset* (+ *offset* (realpart kid-size))))
-     (when (typep kid 'string)
-       (let ((wrap-correction (if *last-string-skip*
-                      (complex 0 (- *last-string-skip*))
-                    0)))
-         (when *last-string-skip*
-           (if outer-wrap-correction
-           (incf outer-wrap-correction wrap-correction)
-         (setf outer-wrap-correction 0)))
-         (setf *last-string-skip* nil)
-         (setf size (complex (+ (realpart size) (realpart kid-size))
-                 (+ (imagpart kid-size) (imagpart size)))
-           *offset* (+ *offset* kid-size wrap-correction)))))))))
+      (let ((kid (car kids)))
+        (setf kids (cdr kids))
+        (unless kid (return (+ size (if outer-wrap-correction
+                                        outer-wrap-correction
+                                        0))))
+        (let ((kid-size (render-element kid)))
+          (when (typep kid 'vertical-element)
+            (setf size (complex (max (realpart size) (realpart kid-size))
+                                (+ (imagpart kid-size) (imagpart size)))
+                  *offset* (+ *offset* (complex 0 (imagpart kid-size)))))
+          (when (typep kid 'horizontal-element)
+            (setf size (complex (+ (realpart size) (realpart kid-size))
+                                (max (imagpart kid-size) (imagpart size)))
+                  *offset* (+ *offset* (realpart kid-size))))
+          (when (typep kid 'string)
+            (let ((wrap-correction (if *last-string-skip*
+                                       (complex 0 (- *last-string-skip*))
+                                       0)))
+              (when *last-string-skip*
+                (if outer-wrap-correction
+                    (incf outer-wrap-correction wrap-correction)
+                    (setf outer-wrap-correction 0)))
+              (setf *last-string-skip* nil)
+              (setf size (complex (+ (realpart size) (realpart kid-size))
+                                  (+ (imagpart kid-size) (imagpart size)))
+                    *offset* (+ *offset* kid-size wrap-correction)))))))))
 
 
 
 (defmethod render-element ((e ul))
   (let ((*offset* (+ *offset* #c(20 15)))
-    (*line-begin* (+ *line-begin* 20)))
+        (*line-begin* (+ *line-begin* 20)))
     (+ #c(20 30) (call-next-method))))
 
 (defmethod render-element ((e li))
   (let ((*offset* (+ *offset* 30))
-    (*line-begin* (+ *line-begin* 30)))
+        (*line-begin* (+ *line-begin* 30)))
     (let ((size (call-next-method)))
       (xlib:draw-rectangle *win* *fg-color-gcontext*
-               (floor (- (realpart *offset*) 20))
-               (floor (+ (imagpart *offset*) 10))
-               10 10 :fill-p)
+                           (floor (- (realpart *offset*) 20))
+                           (floor (+ (imagpart *offset*) 10))
+                           10 10 :fill-p)
       (+ (complex (realpart size) (+ 20 (imagpart size))) 30))))
 
 (defmethod render-element ((e li*))
   (let ((*offset* (+ *offset* 30))
-    (*line-begin* (+ *line-begin* 30)))
+        (*line-begin* (+ *line-begin* 30)))
     (let ((size (call-next-method)))
       (+ (complex (realpart size) (+ 20 (imagpart size))) 30))))
 
@@ -629,7 +629,7 @@ Please use (change-slideset 0) to change it.")
       (complex (realpart n) (+ asc desc (imagpart n))))))
 
 (defmethod render-element ((e br))
-;;  (+ #c(0 30)))
+  ;;  (+ #c(0 30)))
   (multiple-value-bind (w a d l r asc desc)
       (xlib:text-extents *font* "J") ;; <- Why exactly "J", Dan? :)
     (declare (ignore w a d l r))
@@ -645,39 +645,39 @@ Normally :x and :y, respectively, should _not_ be used.
       (filename &key x y width height x-align y-align (ignore-text nil))
       (element-content e)
     
-  (let* ((clx-image (or (slot-value e 'clx-image)
-            (load-image filename)))
-     (image-gcontext (xlib:create-gcontext :drawable *win*))
-     (width (or width (xlib:image-width clx-image)))
-     (height (or height (xlib:image-height clx-image)))
-     (x-pos (cond
-         ((equal x-align "center")
-          (/ (- (xlib:drawable-width *win*) width) 2))
-         ((equal x-align "right")
-          (- (xlib:drawable-width *win*)
-             *main-x-border*
-             width))
-         ((equal x-align "left")
-          *main-x-border*)
-         (t (realpart *offset*))))
-     (y-pos (cond
-         ((equal y-align "center")
-          (/ (- (xlib:drawable-height *win*) height) 2))
-         ((equal y-align "bottom")
-          (- (xlib:drawable-height *win*)
-             *main-y-border*
-             height))
-         ((equal y-align "top")
-          *main-y-border*)
-         (t (imagpart *offset*)))))
-    (xlib:put-image *win* image-gcontext clx-image
-            :x (or x (round x-pos))
-            :y (or y (round y-pos))
-            :width width :height height)
+    (let* ((clx-image (or (slot-value e 'clx-image)
+                          (load-image filename)))
+           (image-gcontext (xlib:create-gcontext :drawable *win*))
+           (width (or width (xlib:image-width clx-image)))
+           (height (or height (xlib:image-height clx-image)))
+           (x-pos (cond
+                    ((equal x-align "center")
+                     (/ (- (xlib:drawable-width *win*) width) 2))
+                    ((equal x-align "right")
+                     (- (xlib:drawable-width *win*)
+                        *main-x-border*
+                        width))
+                    ((equal x-align "left")
+                     *main-x-border*)
+                    (t (realpart *offset*))))
+           (y-pos (cond
+                    ((equal y-align "center")
+                     (/ (- (xlib:drawable-height *win*) height) 2))
+                    ((equal y-align "bottom")
+                     (- (xlib:drawable-height *win*)
+                        *main-y-border*
+                        height))
+                    ((equal y-align "top")
+                     *main-y-border*)
+                    (t (imagpart *offset*)))))
+      (xlib:put-image *win* image-gcontext clx-image
+                      :x (or x (round x-pos))
+                      :y (or y (round y-pos))
+                      :width width :height height)
 
-    (if ignore-text
-    #c(0 0)
-    (+ (complex 0 (+ 20 height)))))))
+      (if ignore-text
+          #c(0 0)
+          (+ (complex 0 (+ 20 height)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -686,22 +686,22 @@ Normally :x and :y, respectively, should _not_ be used.
 (defun render-slide (slide)
   (let ((slide-bg-clx-image (slide-bg-clx-image slide)))
     (if (and *debug-show-bg-image*
-         slide-bg-clx-image)
-    (xlib:put-image *win* *bg-image-gcontext* slide-bg-clx-image :x 0 :y 0)
-      (xlib:with-gcontext (*bg-color-gcontext*
-               :foreground (colorname-to-color (element-bg-color slide)))
-        (xlib:draw-rectangle *win* ;; much faster bg-image code for default bg-image
-                 (if (and *debug-show-bg-image*
-                      (default-bg-clx-image-for-slideset)
-                      (not (slide-bg-color slide)))
-                 *bg-image-gcontext*
-                   *bg-color-gcontext*)
-                 0 0
-                 (xlib:drawable-width *win*)
-                 (xlib:drawable-height *win*)
-                 :fill-p))))
+             slide-bg-clx-image)
+        (xlib:put-image *win* *bg-image-gcontext* slide-bg-clx-image :x 0 :y 0)
+        (xlib:with-gcontext (*bg-color-gcontext*
+                             :foreground (colorname-to-color (element-bg-color slide)))
+          (xlib:draw-rectangle *win* ;; much faster bg-image code for default bg-image
+                               (if (and *debug-show-bg-image*
+                                        (default-bg-clx-image-for-slideset)
+                                        (not (slide-bg-color slide)))
+                                   *bg-image-gcontext*
+                                   *bg-color-gcontext*)
+                               0 0
+                               (xlib:drawable-width *win*)
+                               (xlib:drawable-height *win*)
+                               :fill-p))))
   (let ((*offset* (complex *main-x-border* *main-y-border*))
-    (*line-begin* *main-y-border*))
+        (*line-begin* *main-y-border*))
     (render-element slide))
   (xlib:display-force-output *display*))
 
@@ -716,37 +716,37 @@ Normally :x and :y, respectively, should _not_ be used.
 
 (defmethod make-element (slideset parent (class (eql 'image)) &rest content)
   (let* ((filename (car content))
-     (pathname (merge-pathnames filename *slides-pathname*))
-     (clx-image (progn
-              (format *trace-output* "~:[Not l~;L~]oading inline image ~a.~%"
-                  *preload-images* filename)
-              (force-output)
-              (when *preload-images*
-            (ppm:load-ppm-into-clx-image_depth pathname *default-display-depth*)))))
+         (pathname (merge-pathnames filename *slides-pathname*))
+         (clx-image (progn
+                      (format *trace-output* "~:[Not l~;L~]oading inline image ~a.~%"
+                              *preload-images* filename)
+                      (force-output)
+                      (when *preload-images*
+                        (ppm:load-ppm-into-clx-image_depth pathname *default-display-depth*)))))
     (make-instance class :slideset slideset :parent parent :content content
-           :clx-image clx-image)))
+                         :clx-image clx-image)))
 
 (defun replace-bg-image-by-bg-clx-image (slot-specs)
   (let ((bg-image (getf slot-specs :bg-image)))
     (when bg-image
       (remf slot-specs :bg-image)
       (if *debug-do-not-load-bg-images*
-      (format *trace-output* "Not loading background image ~a.~%" bg-image)
-    (progn
-      (format *trace-output* "Loading background image ~a.~%" bg-image)
-      (force-output)
-      (setf (getf slot-specs :bg-clx-image)
-        (load-image bg-image))))))
+          (format *trace-output* "Not loading background image ~a.~%" bg-image)
+          (progn
+            (format *trace-output* "Loading background image ~a.~%" bg-image)
+            (force-output)
+            (setf (getf slot-specs :bg-clx-image)
+                  (load-image bg-image))))))
   slot-specs)
 
 (defun replace-bg-image-by-bg-clx-image/of-the-slide-config-in-the-configuration-slot (slot-specs)
   (let ((configuration (getf slot-specs :configuration)))
     (when configuration
       (let ((slide-config (assoc 'slide configuration)))
-    (when slide-config
-      (rplacd (assoc 'slide configuration)
-          (replace-bg-image-by-bg-clx-image (cdr slide-config)))))))
-    slot-specs)
+        (when slide-config
+          (rplacd (assoc 'slide configuration)
+                  (replace-bg-image-by-bg-clx-image (cdr slide-config)))))))
+  slot-specs)
 
 (defun with-loaded-bg-images (slot-specs)
   (replace-bg-image-by-bg-clx-image/of-the-slide-config-in-the-configuration-slot
@@ -755,24 +755,24 @@ Normally :x and :y, respectively, should _not_ be used.
 
 (defmethod make-element (slideset parent (class t) &rest content)
   (let* ((instance (if (consp class)
-               (apply #'make-instance (car class)
-                  :slideset slideset :parent parent
-                  (with-loaded-bg-images (cdr class)))
-             (make-instance class :slideset slideset :parent parent)))
-    ;; if this is a new slideset set slideset to its instance
-     (slidesetp (eql (if (consp class)
-                 (car class)
-               class)
-             'slideset))
-     (slideset (if slidesetp instance slideset)))
+                       (apply #'make-instance (car class)
+                              :slideset slideset :parent parent
+                              (with-loaded-bg-images (cdr class)))
+                       (make-instance class :slideset slideset :parent parent)))
+         ;; if this is a new slideset set slideset to its instance
+         (slidesetp (eql (if (consp class)
+                             (car class)
+                             class)
+                         'slideset))
+         (slideset (if slidesetp instance slideset)))
     (setf (element-content instance)
-      (remove nil
-          (mapcar (lambda (c)
-                (apply #'make-element slideset instance
-                   (if (listp c)
-                       c
-                     (list c))))
-              content)))
+          (remove nil
+                  (mapcar (lambda (c)
+                            (apply #'make-element slideset instance
+                                   (if (listp c)
+                                       c
+                                       (list c))))
+                          content)))
     instance))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -780,16 +780,16 @@ Normally :x and :y, respectively, should _not_ be used.
 (defun add-page-number-to-slide (number slide)
   (let ((string (princ-to-string number)))
     (setf (element-content slide)
-      (append (element-content slide)
-          (list (make-instance 'page-number :content (list string)))))))
+          (append (element-content slide)
+                  (list (make-instance 'page-number :content (list string)))))))
 
 (defun add-page-numbers-to-slideset (slideset)
   (do* ((i 2 (1+ i)) ;; do not number the front page, and start with 2
-    (slides (cdr (element-content slideset))
-        (cdr slides))
-    (slide (car slides) (car slides)))
-      ((null slides) slideset)
-;    (format t "i: ~a, slide: ~a~%" i slide)
+        (slides (cdr (element-content slideset))
+                (cdr slides))
+        (slide (car slides) (car slides)))
+       ((null slides) slideset)
+                                        ;    (format t "i: ~a, slide: ~a~%" i slide)
     (add-page-number-to-slide i slide)))
 
 
@@ -797,7 +797,7 @@ Normally :x and :y, respectively, should _not_ be used.
 ;;; load-slides function
 
 (defun load-slides (&optional (pathname *slides-pathname* new-pathname)
-            &key      (preload-images *preload-images* preload-images-p))
+                    &key      (preload-images *preload-images* preload-images-p))
   "Yes, I do know that using both &optinal and &key can be confusing.
 Think of (load-slides) without any parameter as syntactic sugar while you are creating a slide set. :)
 Be aware that :preload-images toggles the preloading of images *globally* and not only for this invokation of load-slides!"
@@ -806,22 +806,22 @@ Be aware that :preload-images toggles the preloading of images *globally* and no
   (when preload-images-p
     (setf *preload-images* preload-images))
   (if (and *slides-pathname*
-       (probe-file *slides-pathname*))
+           (probe-file *slides-pathname*))
       (progn
-    (unless *debug-do-not-reset-*last-foil**
-      (setf *last-foil* 0))
-    (format *trace-output* "Loading slides definition in file ~a.~%" *slides-pathname*)
-    (setf *slidesets*
-          (remove nil
-          (with-open-file (slides-file *slides-pathname* :direction :input)
-                (let ((*package*  #.*package*))
-              (loop for form = (read slides-file nil nil)
-                while form
-                collect (apply #'make-element nil nil form))))))
-    ;; add page numbers to the slidesets
-    (mapcar #'add-page-numbers-to-slideset *slidesets*))
-    (format *trace-output* "Could not load slides definition as the file ~a is not existing.~%Please load one using (load-slide pathname) before starting the slide show with (run)."
-        *slides-pathname*)))
+        (unless *debug-do-not-reset-*last-foil**
+          (setf *last-foil* 0))
+        (format *trace-output* "Loading slides definition in file ~a.~%" *slides-pathname*)
+        (setf *slidesets*
+              (remove nil
+                      (with-open-file (slides-file *slides-pathname* :direction :input)
+                        (let ((*package*  #.*package*))
+                          (loop for form = (read slides-file nil nil)
+                                while form
+                                collect (apply #'make-element nil nil form))))))
+        ;; add page numbers to the slidesets
+        (mapcar #'add-page-numbers-to-slideset *slidesets*))
+      (format *trace-output* "Could not load slides definition as the file ~a is not existing.~%Please load one using (load-slide pathname) before starting the slide show with (run)."
+              *slides-pathname*)))
 
 (load-slides) ;; <---- !!!
 
@@ -831,16 +831,16 @@ Be aware that :preload-images toggles the preloading of images *globally* and no
 (defmacro special-let* (variables &rest body)
   `(let* ,variables
      (declare (special ,@(mapcar (lambda (var)
-                   (if (symbolp var)
-                       var
-                     (car var)))
-                 variables)))
+                                   (if (symbolp var)
+                                       var
+                                       (car var)))
+                                 variables)))
      ,@body))
 
 (defun run (&key (foil *last-foil*)
-           width
-           height
-           (host *host*))
+              width
+              height
+              (host *host*))
   "Start the slide show at foil *last-foil*, or at the foil specified by the key-parameter :foil.
    control keys:
    -------------
@@ -855,8 +855,8 @@ Be aware that :preload-images toggles the preloading of images *globally* and no
    ((*display* (xlib:open-display host))
     (*screen* (xlib:display-default-screen *display*))
     (*default-display-depth* (xlib:screen-root-depth *screen*))
-    (*colormap* (ppm:initialize     ;; <- ugly side effect!
-         (xlib:screen-default-colormap *screen*)))
+    (*colormap* (ppm:initialize ;; <- ugly side effect!
+                 (xlib:screen-default-colormap *screen*)))
     (*screen-width* (or width (xlib:screen-width *screen*)))
     (*screen-height* (or height (xlib:screen-height *screen*)))
     (*win*
@@ -885,28 +885,28 @@ Be aware that :preload-images toggles the preloading of images *globally* and no
       :background *background-pixel*))
     (*bg-image-pixmap*
      (when (and (not *debug-do-not-load-bg-images*)
-        (default-bg-clx-image-for-slideset))
+                (default-bg-clx-image-for-slideset))
        (xlib:image-pixmap
-    (xlib:screen-root *screen*)
-    (default-bg-clx-image-for-slideset))))
+        (xlib:screen-root *screen*)
+        (default-bg-clx-image-for-slideset))))
     (*bg-image-gcontext*
      (xlib:create-gcontext 
       :drawable *win*
       :tile *bg-image-pixmap*
       :fill-style :tiled)))
    (unwind-protect
-       (progn
-     (xlib:set-wm-properties *win*
-                 :name '|Acclaim|
-                 :icon-name "Acclaim"
-                 :resource-name "Acclaim"
-                 :resource-class '|Acclaim|
-                 ;;                      :command (list* 'hello-world host args)
-                 ;;                      :x x :y y :width width :height height
-                 ;;                      :min-width width :min-height height
-                 ;;                      :input :off :initial-state :normal
-                 )
-     (run-core foil))
+        (progn
+          (xlib:set-wm-properties *win*
+                                  :name '|Acclaim|
+                                  :icon-name "Acclaim"
+                                  :resource-name "Acclaim"
+                                  :resource-class '|Acclaim|
+                                  ;;                      :command (list* 'hello-world host args)
+                                  ;;                      :x x :y y :width width :height height
+                                  ;;                      :min-width width :min-height height
+                                  ;;                      :input :off :initial-state :normal
+                                  )
+          (run-core foil))
      ;; close screen
      (xlib:close-display *display*))))
 
